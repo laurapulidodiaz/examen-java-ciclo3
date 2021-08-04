@@ -13,6 +13,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -52,6 +53,8 @@ public class Usuario implements Serializable {
     private String password;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "usuario")
     private List<Partido> partidoList;
+    @Transient
+    private String token;
 
     public Usuario() {
     }
@@ -140,6 +143,14 @@ public class Usuario implements Serializable {
     @Override
     public String toString() {
         return "co.edu.unab.misiontic.pruebac3.model.Usuario[ id=" + id + " ]";
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
     
 }
