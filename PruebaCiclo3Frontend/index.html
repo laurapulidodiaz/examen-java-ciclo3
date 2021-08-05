@@ -1,0 +1,378 @@
+<html>
+    <head>
+        <title>Registros de Partidos</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"> </script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="styles/styles.css">
+        <script>
+            function deleteCookie(cname) {
+                const d = new Date();
+                d.setTime(d.getTime()-10);
+                let expires = "expires="+ d.toUTCString();
+                document.cookie = cname + "=;" + expires + ";path=/";
+            }
+            function setCookie(cname, cvalue, exdays) {
+                const d = new Date();
+                d.setTime(d.getTime() + (exdays*24*60*60*1000));
+                let expires = "expires="+ d.toUTCString();
+                document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+            }
+
+            function getCookie(cname) {
+                let name = cname + "=";
+                let decodedCookie = decodeURIComponent(document.cookie);
+                let ca = decodedCookie.split(';');
+                for(let i = 0; i <ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                    }
+                    if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                    }
+                }
+                return "";
+            }
+
+            function WriteCookieAuth(id, user, token) {
+               setCookie("appmatch", user, 1);
+               setCookie(user, token, 1);
+               setCookie(user+"id", id, 1);
+               console.log("WriteCookieAuth");           
+               console.log(document.cookie);           
+               location.reload();
+            }
+
+            function cerrarSesionUsuario() {
+               deleteCookie(getCookie("appmatch"));
+               deleteCookie("appmatch");         
+               location.reload();
+            }
+
+            function obtenerUsuario() {
+               return getCookie("appmatch");
+            }
+
+            function ReadCookieAuth() {
+               return getCookie(getCookie("appmatch"));
+            }
+            
+            function sendLogin() {
+                var username = document.getElementById('user').value;
+                var password = document.getElementById('password').value;
+                document.getElementById('modal_login').style.display='none';
+
+                var jsonfull = JSON.stringify({ "user": username, "pass": password
+                    });
+                
+                console.log(jsonfull);
+
+                const requestOptions = {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: jsonfull
+                };
+                fetch("http://localhost:8080/login", requestOptions)
+                    .then(response => response.json())
+                    .then(data => (WriteCookieAuth(data.id, username, data.token)));
+            }
+            function updatePartido() {
+                var token = ReadCookieAuth();
+
+                const requestOptions = {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization":token }
+                };
+                fetch("http://localhost:8080/partidos/edit", requestOptions)
+                    .then(response => console.log("Ok"));
+            
+            }
+            function createPartido() {
+                var token = ReadCookieAuth();
+
+                const requestOptions = {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization":token }
+                };
+                fetch("http://localhost:8080/partidos/add", requestOptions)
+                    .then(response => console.log("Ok"));
+            
+            }
+            function getPartidos() {
+                var token = ReadCookieAuth();
+
+                const requestOptions = {
+                    method: "GET",
+                    headers: { "Content-Type": "application/json", "Authorization":token }
+                };
+                fetch("http://localhost:8080/partidos/findall", requestOptions)
+                    .then(response => response.json())
+                    .then(data => (constructTable("#tabla", data)));
+            
+            }
+            function limpiarPartidos(){
+                $("#tabla").empty();
+            }
+            function constructTable(selector, list) {
+                var cols = Headers(list, selector);  
+                for (var i = 0; i < list.length; i++) {
+                    console.log(list[i]);
+                    var row = $('<tr/>');   
+                    var fecha = list[i].fecha;
+                    var date_ob = new Date(fecha);
+                    var year = date_ob.getFullYear();
+                    var month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
+                    var date = ("0" + date_ob.getDate()).slice(-2);
+
+                    var fechacom = year + "-" + month + "-" + date;
+                    var visitante = list[i].visitante.nombre;
+                    var local = list[i].local.nombre;
+                    var golesvisitante = list[i].golesVisitante;
+                    var goleslocal = list[i].golesLocal;
+
+                    row.append($('<td/>').html(fechacom));
+                    row.append($('<td/>').html(visitante));
+                    row.append($('<td/>').html(local));
+                    row.append($('<td/>').html(golesvisitante));
+                    row.append($('<td/>').html(goleslocal));
+                    
+                    $(selector).append(row);
+                }
+            }
+            
+            function Headers(list, selector) {
+                var columns = ["Fecha","Visitante","Local","Goles Visitante","Goles Local"];
+                var header = $('<tr/>');
+                header.append($('<th/>').html("Fecha"));
+                header.append($('<th/>').html("Visitante"));
+                header.append($('<th/>').html("Local"));
+                header.append($('<th/>').html("Goles Visitante"));
+                header.append($('<th/>').html("Goles Local"));
+                
+                $(selector).append(header);
+                    return columns;
+            } 
+            function mostrarRegPartido(){
+                limpiarPartidos();
+                cargarEquipos();
+                document.getElementById('registropartido').style.display = "block";
+            }
+            function guardarPartido(){
+                var username = obtenerUsuario();
+                var fecha = document.getElementById('fecha').value;
+                var goleslocal = document.getElementById('goleslocal').value;
+                var golesvisitante = document.getElementById('golesvisitante').value;
+
+                var localoptions = document.getElementById('equipolocal').options;
+                var idlocal = localoptions[localoptions.selectedIndex].value;
+                var nombrelocal = localoptions[localoptions.selectedIndex].text;
+
+                var visitanteoptions = document.getElementById('equipovisitante').options;
+                var idvisitante = visitanteoptions[visitanteoptions.selectedIndex].value;
+                var nombrevisitante = visitanteoptions[visitanteoptions.selectedIndex].text;
+
+                var jsonfull = JSON.stringify({  
+                    "fechaString": fecha,
+                    "golesLocal": goleslocal,
+                    "golesVisitante": golesvisitante,
+                    "local" : {
+                        "id":idlocal,
+                        "nombre":nombrelocal
+                    },
+                    "visitante" :{
+                        "id":idvisitante,
+                        "nombre":nombrevisitante
+                    },
+                    "usuario" :{
+                        "id" : getCookie(username+"id"),
+                        "username" : username
+                    }
+                    });
+                
+                console.log(jsonfull);
+                var token = ReadCookieAuth();
+
+                const requestOptions = {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization":token  },
+                    body: jsonfull
+                };
+                fetch("http://localhost:8080/partidos/add", requestOptions)
+                    .then(response => {
+                        console.log("Ok");
+                        getPartidos();
+                        document.getElementById('registropartido').style.display = "none";
+                    });
+            }
+            function sendUser() {
+                var username = document.getElementById('username').value;
+                var password = document.getElementById('passwordd').value;
+                var name = document.getElementById('nombre').value;
+                var email = document.getElementById('correo').value;
+
+                var jsonfull = JSON.stringify({ "username": username, 
+                    "password": password,
+                    "nombre": name,
+                    "correo": email
+                    });
+                
+                console.log(jsonfull);
+
+                const requestOptions = {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: jsonfull
+                };
+                fetch("http://localhost:8080/usuarios/add", requestOptions)
+                    .then(response => console.log("Ok"));
+                
+                document.getElementById('modal_registro').style.display='none';
+            }
+            function cargarEquipos() {
+                var token = ReadCookieAuth();
+                const requestOptions = {
+                    method: "GET",
+                    headers: { "Content-Type": "application/json", "Authorization":token }
+                };
+                fetch("http://localhost:8080/equipos/findall", requestOptions)
+                    .then(response => response.json())
+                    .then(data => (cargarSeleccionEquipos(data)));
+            }
+            function cargarSeleccionEquipos(arraylista){
+                $("#equipolocal").empty();
+                $("#equipovisitante").empty();
+                addOptions("#equipolocal", arraylista);
+                addOptions("#equipovisitante", arraylista);
+            }
+            function addOptions(selector, arraylista) {
+                    console.log(arraylista);
+                var options = arraylista.map(function(val, ind){
+                    return $("<option></option>").val(val.id).html(val.nombre);
+                });
+                $(selector).append(options);
+            }
+        </script>
+    </head>
+    <body>
+        <div id="app">
+            <div id="navuser" class="topnav">
+                <a class="active" href="#home">Ver Partidos</a>
+                <a onclick="mostrarRegPartido()" href="#">Registrar Partido</a>
+                <a onclick="cerrarSesionUsuario()" href="#" >Cerrar Sesi&oacute;n {{usuarion}}</a>
+            </div>
+            <div id="navnouser" class="topnav">
+                <a onclick="document.getElementById('modal_login').style.display='block'" href="#">Iniciar Sesi&oacute;n</a>
+                <a onclick="document.getElementById('modal_registro').style.display='block'" href="#">Registrarse</a>
+            </div>
+            <div id="modal_login" class="modal">
+                <form class="modal-content login-form animate">
+                    <div class="imgcontainer">
+                        <span onclick="document.getElementById('modal_login').style.display='none'" class="close" title="Cerrar">&times;</span>
+                        <img src="img/user_icon.png" alt="Avatar" class="avatar">
+                    </div>
+
+                    <div class="container">
+                        <label for="user"><b>Usuario</b></label>
+                        <input type="text" placeholder="Digite su usuario" id="user" name="user" required>
+
+                        <label for="password"><b>Clave</b></label>
+                        <input type="password" placeholder="Digite su clave" id="password" name="password" required>
+                            
+                        <button type="button" onclick="sendLogin()">Login</button>
+                    </div>
+
+                    <div class="container" style="background-color:#f1f1f1">
+                        <button type="button" onclick="document.getElementById('modal_login').style.display='none'" class="cancelbtn">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            <div class="container">
+                <table id="tabla"></table>
+            </div>
+            <div id="modal_registro" class="modal">
+                <span onclick="document.getElementById('modal_registro').style.display='none'" class="close" title="Cerrar">&times;</span>
+                <form class="modal-content reg-form">
+                    <div class="container">
+                        <h1>Registro de Usuario</h1>
+                        <p>Por favor llene este formulario para crear una cuenta.</p>
+                        <hr>
+                        <label for="nombre"><b>Nombre</b></label>
+                        <input type="text" placeholder="Digite su nombre" name="nombre" id="nombre" required>
+                        
+                        <label for="correo"><b>Correo</b></label>
+                        <input type="text" placeholder="Digite un correo electrónico" name="correo" id="correo" required>
+
+                        <label for="username"><b>Usuario</b></label>
+                        <input type="text" placeholder="Digite su usuario" name="username" id="username" required>
+
+                        <label for="passwordd"><b>Clave</b></label>
+                        <input type="text" placeholder="Digite su clave" name="passwordd" id="passwordd" required>
+
+                        <div class="clearfix">
+                            <button type="button" onclick="sendUser()" class="signupbtn">Registrar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="container" id="registropartido">
+            <form>
+                <label for="fecha">Fecha</label>
+                <input type="date" id="fecha" name="fecha" placeholder="">
+
+                <label for="equipolocal">Equipo Local</label>
+                <select id="equipolocal" name="equipolocal"> </select>
+
+                <label for="equipovisitante">Equipo Visitante</label>
+                <select id="equipovisitante" name="equipovisitante"> </select>
+
+                <label for="goleslocal">Goles Local</label>
+                <input type="text" id="goleslocal" name="goleslocal" placeholder="">
+
+                <label for="golesvisitante">Goles Visitante</label>
+                <input type="text" id="golesvisitante" name="golesvisitante" placeholder="">
+
+                <button type="button" onclick="guardarPartido()">Registrar</button>
+            </form>
+        </div>
+        <script>
+            var modal = document.getElementById('modal_login');
+            var modal1 = document.getElementById('modal_registro');
+            window.onclick = function(event) {
+                if (event.target == modal || event.target == modal1) {
+                    document.getElementById('modal_login').style.display = "none";
+                    document.getElementById('modal_registro').style.display = "none";
+                }
+            }
+
+            var authtoken = ReadCookieAuth();
+            if(authtoken==""){
+                document.getElementById('navuser').style.display = "none";
+                document.getElementById('navnouser').style.display = "block";
+                document.getElementById('registropartido').style.display = "none";
+                limpiarPartidos();
+            } else {
+                console.log(authtoken);
+                document.getElementById('navuser').style.display = "block";
+                document.getElementById('navnouser').style.display = "none";
+                document.getElementById('registropartido').style.display = "none";
+                getPartidos();
+            }
+
+
+
+            const app = new Vue({
+                el: '#app',
+                data: {
+                    displaynavuser: 'none',
+                    displaynavmatch: '',
+                    usuarion: obtenerUsuario()
+                }
+            });
+        </script>
+    </body>
+</html>
