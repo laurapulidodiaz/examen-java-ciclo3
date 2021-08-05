@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.ParameterExpression;
 
 /**
  *
@@ -173,6 +175,28 @@ public class UsuariosJpaController implements Serializable {
         }
     }
 
+    public Usuario loginUsuario(String user, String pass) {
+        EntityManager em = getEntityManager();
+        try {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Usuario> q = cb.createQuery(Usuario.class);
+            Root<Usuario> c = q.from(Usuario.class);
+            q.select(c);
+            q.where(
+                    cb.equal(c.get("username"), user),
+                    cb.equal(c.get("password"), pass)
+            );
+            return em.createQuery(q).getResultList().get(0);
+        } catch(Exception e) {
+            System.out.println(user);
+            System.out.println(pass);
+            em.close();
+        }   finally {
+            em.close();
+        }
+        return null;
+    }
+
     public Usuario findUsuario(Integer id) {
         EntityManager em = getEntityManager();
         try {
@@ -194,5 +218,5 @@ public class UsuariosJpaController implements Serializable {
             em.close();
         }
     }
-    
+
 }

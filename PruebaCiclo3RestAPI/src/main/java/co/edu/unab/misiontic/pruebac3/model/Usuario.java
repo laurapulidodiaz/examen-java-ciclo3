@@ -113,7 +113,7 @@ public class Usuario implements Serializable {
 
     @XmlTransient
     public List<Partido> getPartidoList() {
-        return partidoList;
+        return null;
     }
 
     public void setPartidoList(List<Partido> partidoList) {

@@ -1,6 +1,7 @@
 package co.edu.unab.misiontic.pruebac3.model;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -15,6 +16,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -42,12 +44,14 @@ public class Partido implements Serializable {
     @Column(name = "fecha")
     @Temporal(TemporalType.DATE)
     private Date fecha;
+    @Transient
+    private String fechaString;
     @Basic(optional = false)
     @Column(name = "goles_local")
-    private int golesLocal;
+    private int golesLocal = -1;
     @Basic(optional = false)
     @Column(name = "goles_visitante")
-    private int golesVisitante;
+    private int golesVisitante = -1;
     @JoinColumn(name = "local", referencedColumnName = "id")
     @ManyToOne(optional = false)
     private Equipo local;
@@ -81,11 +85,30 @@ public class Partido implements Serializable {
     }
 
     public Date getFecha() {
+        if(fecha==null){
+            return new Date();
+        }
         return fecha;
     }
 
     public void setFecha(Date fecha) {
         this.fecha = fecha;
+    }
+    public String getFechaString(){
+        return fechaString;
+    }
+
+    public void setFechaString(String fechaString) {
+        if(fechaString!=null){
+            Date date1;  
+            try {
+                date1 = new SimpleDateFormat("yyyy-MM-dd").parse(fechaString);
+                this.fechaString=fechaString;
+                this.fecha = date1;
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
     }
 
     public int getGolesLocal() {

@@ -73,7 +73,7 @@ public class Equipo implements Serializable {
 
     @XmlTransient
     public List<Partido> getPartidoList() {
-        return partidosComoLocal;
+        return null;
     }
 
     public void setPartidoList(List<Partido> partidoList) {
@@ -82,7 +82,7 @@ public class Equipo implements Serializable {
 
     @XmlTransient
     public List<Partido> getPartidoList1() {
-        return partidosComoVisitante;
+        return null;
     }
 
     public void setPartidoList1(List<Partido> partidoList1) {

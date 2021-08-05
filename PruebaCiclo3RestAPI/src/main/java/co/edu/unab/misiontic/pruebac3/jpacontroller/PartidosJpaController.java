@@ -49,18 +49,6 @@ public class PartidosJpaController implements Serializable {
                 partidos.setUsuario(usuario);
             }
             em.persist(partidos);
-            if (local != null) {
-                local.getPartidoList().add(partidos);
-                local = em.merge(local);
-            }
-            if (visitante != null) {
-                visitante.getPartidoList().add(partidos);
-                visitante = em.merge(visitante);
-            }
-            if (usuario != null) {
-                usuario.getPartidoList().add(partidos);
-                usuario = em.merge(usuario);
-            }
             em.getTransaction().commit();
         } finally {
             if (em != null) {
